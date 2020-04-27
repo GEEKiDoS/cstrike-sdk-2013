@@ -40,7 +40,8 @@ server.dll
 server.lib
 game_shader_dx9.dll
 game_shader_dx9.pdb
-
+game_shader_dx9.lib
+vgui_controls.lib
 
 client.so
 client.so.dbg
