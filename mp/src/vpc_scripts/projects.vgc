@@ -16,6 +16,7 @@ $Project "captioncompiler"
 
 $Project "client"
 {
+	"game\client\client_cstrike.vpc"	[($WIN32||$POSIX) && $CSTRIKE]
 	"game\client\client_hl2mp.vpc"		[($WIN32||$POSIX) && $HL2MP]
 }
 
@@ -27,6 +28,7 @@ $Project "fgdlib"
 $Project "game_shader_dx9"
 {
 	"materialsystem\stdshaders\game_shader_dx9_hl2mp.vpc" [$HL2MP]
+	"materialsystem\stdshaders\game_shader_dx9_cstrike.vpc" [$CSTRIKE]
 }
 
 $Project "glview"
@@ -41,6 +43,7 @@ $Project "height2normal"
 
 $Project "server"
 {
+	"game\server\server_cstrike.vpc"	[($WIN32||$POSIX) && $CSTRIKE]
 	"game\server\server_hl2mp.vpc"		[($WIN32||$POSIX) && $HL2MP]
 }
 

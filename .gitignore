@@ -18,7 +18,10 @@ ipch
 *.opensdf
 *.idb
 *.vcxproj
+*.vcxproj.filters
 *.sln
+mp/src/.vs/
+vc120.pdb
 
 # OSX/Linux build products
 *.mak
@@ -35,6 +38,8 @@ client.lib
 server.pdb
 server.dll
 server.lib
+game_shader_dx9.dll
+game_shader_dx9.pdb
 
 client.so
 client.so.dbg
@@ -54,3 +59,5 @@ config.cfg
 # shader files
 *.tmp
 
+# vpc temp
+*.vpc.sentinel
