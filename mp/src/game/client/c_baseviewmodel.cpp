@@ -18,6 +18,7 @@
 #include "tools/bonelist.h"
 #include <KeyValues.h>
 #include "hltvcamera.h"
+#include "cs_gamerules.h"
 #ifdef TF_CLIENT_DLL
 	#include "tf_weaponbase.h"
 #endif
@@ -331,6 +332,21 @@ int C_BaseViewModel::DrawModel( int flags )
 		if ( pWeapon )
 		{
 			pWeapon->ViewModelDrawn( this );
+
+			FOR_EACH_VEC(m_vecViewmodelArmModels, i)
+			{
+				if (m_vecViewmodelArmModels[i])
+				{
+
+					if (m_vecViewmodelArmModels[i]->GetMoveParent() != this)
+					{
+						m_vecViewmodelArmModels[i]->SetEFlags(EF_BONEMERGE);
+						m_vecViewmodelArmModels[i]->SetParent(this);
+					}
+
+					m_vecViewmodelArmModels[i]->DrawModel(flags);
+				}
+			}
 		}
 	}
 
@@ -499,6 +515,79 @@ void C_BaseViewModel::GetBoneControllers(float controllers[MAXSTUDIOBONECTRLS])
 	{
 		pWeapon->GetViewmodelBoneControllers( this, controllers );
 	}
+}
+
+//--------------------------------------------------------------------------------------------------------
+void C_BaseViewModel::RemoveViewmodelArmModels(void)
+{
+	FOR_EACH_VEC_BACK(m_vecViewmodelArmModels, i)
+	{
+		C_ViewmodelAttachmentModel* pEnt = m_vecViewmodelArmModels[i].Get();
+		if (pEnt)
+		{
+			pEnt->Remove();
+		}
+	}
+	m_vecViewmodelArmModels.RemoveAll();
+}
+
+extern ArmConfig* g_pArmConfig;
+
+void C_BaseViewModel::UpdateAllViewmodelAddons(int team)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer)
+	{
+		RemoveViewmodelArmModels();
+		return;
+	}
+
+	// add gloves and sleeves
+	if (m_vecViewmodelArmModels.Count() == 0)
+	{
+		std::string armModel;
+		std::string gloveModel;
+
+		switch (team)
+		{
+		case 3:
+			armModel = g_pArmConfig->m_CTArms[RandomInt(0, g_pArmConfig->m_CTArms.size() - 1)];
+			gloveModel = g_pArmConfig->m_CTGloves[RandomInt(0, g_pArmConfig->m_CTGloves.size() - 1)];
+			break;
+		default:
+			armModel = g_pArmConfig->m_TArms[RandomInt(0, g_pArmConfig->m_TArms.size() - 1)];
+			gloveModel = g_pArmConfig->m_TGloves[RandomInt(0, g_pArmConfig->m_TGloves.size() - 1)];
+			break;
+		}
+
+		AddViewmodelArmModel(armModel.c_str());
+		AddViewmodelArmModel(gloveModel.c_str());
+	}
+}
+
+C_ViewmodelAttachmentModel* C_BaseViewModel::AddViewmodelArmModel(const char* pszArmsModel)
+{
+	// Only create the view model attachment if we have a valid arm model
+	if (pszArmsModel == NULL || pszArmsModel[0] == '\0' || modelinfo->GetModelIndex(pszArmsModel) == -1)
+		return NULL;
+
+	C_ViewmodelAttachmentModel* pEnt = new class C_ViewmodelAttachmentModel;
+	if (pEnt && pEnt->InitializeAsClientEntity(pszArmsModel, GetRenderGroup()))
+	{
+		m_vecViewmodelArmModels[m_vecViewmodelArmModels.AddToTail()] = pEnt;
+
+		pEnt->SetParent(this);
+		pEnt->SetLocalOrigin(vec3_origin);
+		pEnt->UpdatePartitionListEntry();
+		pEnt->CollisionProp()->MarkPartitionHandleDirty();
+		pEnt->UpdateVisibility();
+		pEnt->SetViewmodel(this);
+
+		RemoveEffects(EF_NODRAW);
+		return pEnt;
+	}
+
+	return NULL;
 }
 
 //-----------------------------------------------------------------------------

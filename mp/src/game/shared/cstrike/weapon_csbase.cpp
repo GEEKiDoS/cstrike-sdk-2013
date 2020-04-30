@@ -1614,98 +1614,74 @@ bool CWeaponCSBase::IsUseable()
 
 
 #if defined( CLIENT_DLL )
-
-	float	g_lateralBob = 0;
-	float	g_verticalBob = 0;
-
-	static ConVar	cl_bobcycle( "cl_bobcycle","0.8", FCVAR_CHEAT );
-	static ConVar	cl_bob( "cl_bob","0.002", FCVAR_CHEAT );
-	static ConVar	cl_bobup( "cl_bobup","0.5", FCVAR_CHEAT );
-
 	//-----------------------------------------------------------------------------
 	// Purpose:
 	// Output : float
 	//-----------------------------------------------------------------------------
 	float CWeaponCSBase::CalcViewmodelBob( void )
 	{
-		static	float bobtime;
-		static	float lastbobtime;
-		static  float lastspeed;
-		float	cycle;
-
-		CBasePlayer *player = ToBasePlayer( GetOwner() );
-		//Assert( player );
-
-		//NOTENOTE: For now, let this cycle continue when in the air, because it snaps badly without it
-
-		if ( ( !gpGlobals->frametime ) ||
-			 ( player == NULL ) ||
-			 ( cl_bobcycle.GetFloat() <= 0.0f ) ||
-			 ( cl_bobup.GetFloat() <= 0.0f ) ||
-			 ( cl_bobup.GetFloat() >= 1.0f ) )
-		{
-			//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
-			return 0.0f;// just use old value
-		}
-
-		//Find the speed of the player
-		float speed = player->GetLocalVelocity().Length2D();
-		float flmaxSpeedDelta = MAX( 0, (gpGlobals->curtime - lastbobtime) * 320.0f );
-
-		// don't allow too big speed changes
-		speed = clamp( speed, lastspeed-flmaxSpeedDelta, lastspeed+flmaxSpeedDelta );
-		speed = clamp( speed, -320, 320 );
-
-		lastspeed = speed;
-
-		//FIXME: This maximum speed value must come from the server.
-		//		 MaxSpeed() is not sufficient for dealing with sprinting - jdw
-
-
-
-		float bob_offset = RemapVal( speed, 0, 320, 0.0f, 1.0f );
-
-		bobtime += ( gpGlobals->curtime - lastbobtime ) * bob_offset;
-		lastbobtime = gpGlobals->curtime;
-
-		//Calculate the vertical bob
-		cycle = bobtime - (int)(bobtime/cl_bobcycle.GetFloat())*cl_bobcycle.GetFloat();
-		cycle /= cl_bobcycle.GetFloat();
-
-		if ( cycle < cl_bobup.GetFloat() )
-		{
-			cycle = M_PI * cycle / cl_bobup.GetFloat();
-		}
-		else
-		{
-			cycle = M_PI + M_PI*(cycle-cl_bobup.GetFloat())/(1.0 - cl_bobup.GetFloat());
-		}
-
-		g_verticalBob = speed*0.005f;
-		g_verticalBob = g_verticalBob*0.3 + g_verticalBob*0.7*sin(cycle);
-
-		g_verticalBob = clamp( g_verticalBob, -7.0f, 4.0f );
-
-		//Calculate the lateral bob
-		cycle = bobtime - (int)(bobtime/cl_bobcycle.GetFloat()*2)*cl_bobcycle.GetFloat()*2;
-		cycle /= cl_bobcycle.GetFloat()*2;
-
-		if ( cycle < cl_bobup.GetFloat() )
-		{
-			cycle = M_PI * cycle / cl_bobup.GetFloat();
-		}
-		else
-		{
-			cycle = M_PI + M_PI*(cycle-cl_bobup.GetFloat())/(1.0 - cl_bobup.GetFloat());
-		}
-
-		g_lateralBob = speed*0.005f;
-		g_lateralBob = g_lateralBob*0.3 + g_lateralBob*0.7*sin(cycle);
-		g_lateralBob = clamp( g_lateralBob, -7.0f, 4.0f );
-
 		//NOTENOTE: We don't use this return value in our case (need to restructure the calculation function setup!)
 		return 0.0f;
+	}
 
+#define TAU 6.28318530718f
+#define PI 3.14159265359f
+
+	static ConVar cl_gunbob_intensity("cl_weaponbob_intensity", "1", FCVAR_CLIENTDLL, "Gun bob intensity multiplier");
+	static ConVar cl_gunbob_rate("cl_weaponbob_rate", "1.5", FCVAR_CLIENTDLL, "Gun bob rate multiplier");
+
+	const Vector upVec(0, 0, 1), riVec(1, 0, 0), fwVec(0, 1, 0);
+
+	const float rateScaleFac = 2;
+	const float rate_up = 6 * rateScaleFac;
+	const float scale_up = 0.5;
+	const float rate_right = 3 * rateScaleFac;
+	const float scale_right = -0.5;
+	const float rate_forward_view = 3 * rateScaleFac;
+	const float scale_forward_view = 0.35;
+	const float rate_right_view = 3 * rateScaleFac;
+	const float scale_right_view = -1;
+	const float rate_p = 6 * rateScaleFac;
+	const float scale_p = 3;
+	const float rate_y = 3 * rateScaleFac;
+	const float scale_y = 6;
+	const float rate_r = 3 * rateScaleFac;
+	const float scale_r = -6;
+	const float pist_rate = 3 * rateScaleFac;
+	const float pist_scale = 9;
+	const float rate_clamp = 2 * rateScaleFac;
+
+	float walkIntensitySmooth = 0, breathIntensitySmooth = 0;
+	const float walkRateUnscaled = 320 / 60 * TAU / 1.085 / 2 * rateScaleFac;
+	Vector walkVec = Vector();
+	Vector ownerVelocity = Vector(), ownerVelocityMod = Vector();
+	float zVelocity = 0, zVelocitySmooth = 0;
+	float xVelocity = 0, xVelocitySmooth = 0;
+	Vector rightVec = Vector();
+	Vector flatVec = Vector(1, 1, 0);
+	Vector WalkPos = Vector();
+	Vector WalkPosLagged = Vector();
+
+	void RotateAroundAxis(QAngle& angOurAngs, Vector axisvector, float degrees)
+	{
+		matrix3x4_t     m_rgflCoordinateFrame;
+		Vector          rotationAxisLs;
+		Quaternion      q;
+		matrix3x4_t     xform;
+		matrix3x4_t     localToWorldMatrix;
+		QAngle          rotatedAngles;
+
+		AngleMatrix(angOurAngs, m_rgflCoordinateFrame);
+		VectorIRotate(axisvector, m_rgflCoordinateFrame, rotationAxisLs);
+		AxisAngleQuaternion(rotationAxisLs, degrees, q);
+		QuaternionMatrix(q, vec3_origin, xform);
+		ConcatTransforms(m_rgflCoordinateFrame, xform, localToWorldMatrix);
+
+		MatrixAngles(localToWorldMatrix, rotatedAngles);
+
+		angOurAngs.x = rotatedAngles.x;
+		angOurAngs.y = rotatedAngles.y;
+		angOurAngs.z = rotatedAngles.z;
 	}
 
 	//-----------------------------------------------------------------------------
@@ -1716,24 +1692,84 @@ bool CWeaponCSBase::IsUseable()
 	//-----------------------------------------------------------------------------
 	void CWeaponCSBase::AddViewmodelBob( CBaseViewModel *viewmodel, Vector &origin, QAngle &angles )
 	{
-		Vector	forward, right;
-		AngleVectors( angles, &forward, &right, NULL );
+		static float lastbobtime;
+		static float ti;
+		static float walkTI;
 
-		CalcViewmodelBob();
+		CBasePlayer* player = ToBasePlayer(GetOwner());
 
-		// Apply bob, but scaled down to 40%
-		VectorMA( origin, g_verticalBob * 0.4f, forward, origin );
+		if (!player)
+			return;
 
-		// Z bob a bit more
-		origin[2] += g_verticalBob * 0.1f;
+		float walkRate = walkRateUnscaled * cl_gunbob_rate.GetFloat() * min(player->GetAbsVelocity().Length2D() / player->GetPlayerMaxSpeed(), 1);
 
-		// bob the angles
-		angles[ ROLL ]	+= g_verticalBob * 0.5f;
-		angles[ PITCH ]	-= g_verticalBob * 0.4f;
+		Vector forward, right, up;
+		AngleVectors(angles, &forward, &right, &up);
 
-		angles[ YAW ]	-= g_lateralBob  * 0.3f;
+		float rate = 0.5;
+		float gunbob_intensity = cl_gunbob_intensity.GetFloat();
+		float walkIntensity = min(player->GetAbsVelocity().Length2D() / player->GetPlayerMaxSpeed(), 1);
+		float delta = gpGlobals->curtime - lastbobtime;
+		lastbobtime = gpGlobals->curtime;
 
-	//	VectorMA( origin, g_lateralBob * 0.2f, right, origin );
+		Vector upLocal = upVec, riLocal = riVec, fwLocal = fwVec;
+		ti += delta * rate;
+
+		walkIntensitySmooth = Lerp(delta * 10 * rateScaleFac, walkIntensitySmooth, walkIntensity);
+		walkVec = Lerp(walkIntensitySmooth, Vector(0, 0, 0), Vector(0.5, -0.5, -0.5));
+		auto ownerVelocity = player->GetAbsVelocity();
+		zVelocity = ownerVelocity.z;
+		zVelocitySmooth = Lerp(delta * 7 * rateScaleFac, zVelocitySmooth, zVelocity);
+		ownerVelocityMod = ownerVelocity * flatVec;
+		ownerVelocityMod.NormalizeInPlace();
+
+		rightVec = right * flatVec;
+		rightVec.NormalizeInPlace();
+
+		xVelocity = ownerVelocity.Length2D() * ownerVelocityMod.Dot(rightVec);
+		xVelocitySmooth = Lerp(delta * 5 * rateScaleFac, xVelocitySmooth, xVelocity);
+
+		//multipliers
+		walkIntensity = walkIntensitySmooth * gunbob_intensity * 1.5;
+
+		//walk anims, danny method because i just can't
+		walkTI += delta * 160 / 60 * player->GetAbsVelocity().Length2D() / player->GetPlayerMaxSpeed();
+		WalkPos.x = Lerp(delta * 5 * rateScaleFac, WalkPos.x, -sin(ti * walkRate * 0.5f) * gunbob_intensity * walkIntensity);
+		WalkPos.y = Lerp(delta * 5 * rateScaleFac, WalkPos.y, sin(ti * walkRate) / 1.5f * gunbob_intensity * walkIntensity);
+		WalkPosLagged.x = Lerp(delta * 5 * rateScaleFac, WalkPosLagged.x, -sin((ti * walkRate * 0.5f) + PI / 3.0f) * gunbob_intensity * walkIntensity);
+		WalkPosLagged.y = Lerp(delta * 5 * rateScaleFac, WalkPosLagged.y, sin(ti * walkRate + PI / 3.0f) / 1.5f * gunbob_intensity * walkIntensity);
+		origin += (WalkPos.x * 0.33 * riLocal);
+		origin += (WalkPos.y * 0.25 * upLocal);
+		RotateAroundAxis(angles, right, -WalkPosLagged.y);
+		RotateAroundAxis(angles, up, WalkPosLagged.x);
+		RotateAroundAxis(angles, forward, WalkPos.x);
+
+		AngleVectors(angles, &forward, &right, &up);
+
+		//constant offset
+		origin += (riLocal * walkVec.x);
+		origin += (fwLocal * walkVec.y);
+		origin += (upLocal * walkVec.z);
+
+		//jumping
+		float trigX = -clamp(zVelocitySmooth / 200, -1, 1) * PI / 2;
+		float jumpIntensity = (3 + clamp(abs(zVelocitySmooth) - 100, 0, 200) / 200 * 4);
+		origin += (right * sin(trigX) * scale_r * 0.1 * jumpIntensity * 0.4);
+		origin += (-up * sin(trigX) * scale_r * 0.1 * jumpIntensity * 0.4);
+		RotateAroundAxis(angles, forward, sin(trigX) * scale_r * jumpIntensity * 0.4);
+
+		AngleVectors(angles, &forward, &right, &up);
+
+		//rolling with horizontal motion
+		float xVelocityClamped = xVelocitySmooth;
+
+		if (abs(xVelocityClamped) > 200)
+		{
+			float sign = (xVelocityClamped < 0) ? -1 : 1;
+			xVelocityClamped = (sqrt((abs(xVelocityClamped) - 200) / 50) * 50 + 200) * sign;
+		}
+
+		RotateAroundAxis(angles, forward, xVelocityClamped * 0.04);
 	}
 
 #else

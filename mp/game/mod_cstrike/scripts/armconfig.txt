@@ -1,0 +1,50 @@
+"ArmConfig"
+{
+    "T"
+    {
+        "Arms"
+        {
+            "model" "models/weapons/v_models/arms/separatist/v_sleeve_separatist.mdl"
+            "model" "models/weapons/v_models/arms/balkan/v_sleeve_balkan.mdl"
+            "model" "models/weapons/v_models/arms/professional/v_sleeve_professional.mdl"
+            "model" "models/weapons/v_models/arms/pirate/v_pirate_watch.mdl"
+            "model" ""
+        }
+        "Gloves"
+        {
+            "model" "models/weapons/v_models/arms/glove_fingerless/v_glove_fingerless.mdl"
+            "model" "models/weapons/v_models/arms/v_glove_fullfinger/v_glove_fullfinger.mdl"
+            "model" "models/weapons/v_models/arms/glove_bloodhound/v_glove_bloodhound.mdl"
+            "model" "models/weapons/v_models/arms/glove_handwrap_leathery/v_glove_handwrap_leathery.mdl"
+            "model" "models/weapons/v_models/arms/glove_motorcycle/v_glove_motorcycle.mdl"
+            "model" "models/weapons/v_models/arms/glove_slick/v_glove_slick.mdl"
+            "model" "models/weapons/v_models/arms/glove_sporty/v_glove_sporty.mdl"
+            "model" "models/weapons/v_models/arms/bare/v_bare_hands.mdl"
+        }
+    }
+    "CT"
+    {
+        "Arms"
+        {
+            "model" "models/weapons/v_models/arms/st6/v_sleeve_st6.mdl"
+            "model" "models/weapons/v_models/arms/idf/v_sleeve_idf.mdl"
+            "model" "models/weapons/v_models/arms/gign/v_sleeve_gign.mdl"
+            "model" "models/weapons/v_models/arms/swat/v_sleeve_swat.mdl"
+            "model" "models/weapons/v_models/arms/gsg9/v_sleeve_gsg9.mdl"
+            "model" "models/weapons/v_models/arms/sas/v_sleeve_sas.mdl"
+            "model" "models/weapons/v_models/arms/fbi/v_sleeve_fbi.mdl"
+            "model" ""
+        }
+        "Gloves"
+        {
+            "model" "models/weapons/v_models/arms/glove_hardknuckle/v_glove_hardknuckle.mdl"
+            "model" "models/weapons/v_models/arms/glove_hardknuckle/v_glove_hardknuckle_blue.mdl"
+            "model" "models/weapons/v_models/arms/glove_hardknuckle/v_glove_hardknuckle_black.mdl"
+            "model" "models/weapons/v_models/arms/glove_bloodhound/v_glove_bloodhound.mdl"
+            "model" "models/weapons/v_models/arms/glove_handwrap_leathery/v_glove_handwrap_leathery.mdl"
+            "model" "models/weapons/v_models/arms/glove_motorcycle/v_glove_motorcycle.mdl"
+            "model" "models/weapons/v_models/arms/glove_slick/v_glove_slick.mdl"
+            "model" "models/weapons/v_models/arms/glove_sporty/v_glove_sporty.mdl"
+        }
+    }
+}

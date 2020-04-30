@@ -56,6 +56,9 @@
 
 #include "iviewrender_beams.h"			// flashlight beam
 
+#include <vector>
+#include <string>
+
 //=============================================================================
 // HPE_BEGIN:
 // [menglish] Adding and externing variables needed for the freezecam
@@ -94,8 +97,6 @@ public:
 	const char *m_pModelName;		//If this is present, will use this model instead of looking up the weapon
 	const char *m_pHolsterName;
 };
-
-
 
 // These must follow the ADDON_ ordering.
 CAddonInfo g_AddonInfo[] =
@@ -1737,6 +1738,31 @@ void C_CSPlayer::UpdateClientSideAnimation()
 	{
 		// latch old values
 		OnLatchInterpolatedVariables( LATCH_ANIMATION_VAR );
+	}
+
+	if (IsLocalPlayer())
+	{
+		CWeaponCSBase* pWeapon = GetActiveCSWeapon();
+		if (pWeapon)
+		{
+			C_BaseViewModel* pViewModel = assert_cast<C_BaseViewModel*>(GetViewModel(pWeapon->m_nViewModelIndex));
+			if (pViewModel)
+			{
+				pViewModel->UpdateAllViewmodelAddons(this->GetTeamNumber());
+			}
+		}
+		else
+		{
+			//We have a null weapon so remove the add ons for all the view models for this player.
+			for (int i = 0; i < MAX_VIEWMODELS; ++i)
+			{
+				C_BaseViewModel* pViewModel = assert_cast<C_BaseViewModel*>(GetViewModel(i));
+				if (pViewModel)
+				{
+					pViewModel->RemoveViewmodelArmModels();
+				}
+			}
+		}
 	}
 }
 

@@ -1,0 +1,10 @@
+..\..\..\game\hl2\shaders\fxc\SDK_screenspaceeffect_vs30.vcs
+..\..\..\game\hl2\shaders\fxc\floatcombine_autoexpose_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\floatcombine_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\floattoscreen_notonemap_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\floattoscreen_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\floattoscreen_vanilla_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\magicbloom_blur1_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\magicbloom_blur2_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\magicbloom_blend_ps30.vcs
+..\..\..\game\hl2\shaders\fxc\pp_color_hdr_ps30.vcs

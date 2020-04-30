@@ -1,0 +1,70 @@
+#define HDRTYPE HDR_TYPE_NONE
+#include "common_ps_fxc.h"
+
+sampler	FBTextureSampler				: register( s0 );
+
+struct PS_INPUT
+{
+	float2 baseTexCoord : TEXCOORD0;
+};
+
+// Settings:
+#define EVignetteAmount			2.8
+#define EVignetteCurve			1.5
+#define EVignetteRadius			0.8
+
+#define CHROMATIC_AMOUT 0.004f
+
+#define DRAK_WITH_BLUE_TINT 0
+// End of settings
+
+
+float3 Vignette(float3 color, float2 coord) 
+{
+	float2 uv = (coord-0.5) * EVignetteRadius;
+	float vignetteold = saturate(dot(uv.xy, uv.xy));
+	vignetteold = pow(vignetteold, EVignetteCurve);
+	float3 EVignetteColor = float3(0.0, 0.0, 0.0);
+	return lerp(color.xyz, EVignetteColor, vignetteold * EVignetteAmount);
+}
+
+float3 CA(float3 color, float2 coord)
+{
+	float3 eta = float3(1.0 + CHROMATIC_AMOUT * 0.9, 1.0 + CHROMATIC_AMOUT * 0.6, 1.0 + CHROMATIC_AMOUT * 0.3);
+	float2 center = float2(coord.x - 0.5, coord.y - 0.5);
+
+	float2 rCoords = eta.r * 2 * (center.xy * 0.5) + 0.5;
+	float2 gCoords = eta.g * 2 * (center.xy * 0.5) + 0.5;
+	float2 bCoords = eta.b * 2 * (center.xy * 0.5) + 0.5;
+
+	return float3(
+		tex2D(FBTextureSampler, rCoords).r,
+		tex2D(FBTextureSampler, gCoords).g,
+		tex2D(FBTextureSampler, bCoords).b
+	);
+}
+
+float3 ReplaceDark(float3 color)
+{
+	#if(DRAK_WITH_BLUE_TINT == 1)
+		float3 darkColor = float3(0.027f / 2.0f, 0.117f / 2.0f, 0.250f / 2.0f);
+	#else
+		float3 darkColor = float3(0.08f, 0, 0);
+	#endif
+
+	return 1 - (1 - color) * (1 - darkColor);
+}
+	   
+float4 main( PS_INPUT i ) : COLOR
+{
+	float2 fbTexCoord = i.baseTexCoord.xy;
+	float3 baseColor  = tex2D( FBTextureSampler, fbTexCoord ).rgb;
+	
+	baseColor = CA(baseColor, fbTexCoord);
+	baseColor = Vignette(baseColor, fbTexCoord);
+	baseColor = ReplaceDark(baseColor);
+
+	float4 outColor = float4( baseColor, 1 );
+
+	return outColor;
+}

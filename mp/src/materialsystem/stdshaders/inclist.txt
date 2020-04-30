@@ -1,0 +1,10 @@
+fxctmp9_tmp\SDK_screenspaceeffect_vs30.inc
+fxctmp9_tmp\floatcombine_autoexpose_ps30.inc
+fxctmp9_tmp\floatcombine_ps30.inc
+fxctmp9_tmp\floattoscreen_notonemap_ps30.inc
+fxctmp9_tmp\floattoscreen_ps30.inc
+fxctmp9_tmp\floattoscreen_vanilla_ps30.inc
+fxctmp9_tmp\magicbloom_blur1_ps30.inc
+fxctmp9_tmp\magicbloom_blur2_ps30.inc
+fxctmp9_tmp\magicbloom_blend_ps30.inc
+fxctmp9_tmp\pp_color_hdr_ps30.inc

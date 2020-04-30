@@ -1,0 +1,18 @@
+magicbloom_blend_ps30.fxc
+magicbloom_shared.h
+common_fxc.h
+common_ps_fxc.h
+common_pragmas.h
+common_hlsl_cpp_consts.h
+magicbloom_blend_ps30.fxc
+magicbloom_shared.h
+common_fxc.h
+common_ps_fxc.h
+common_pragmas.h
+common_hlsl_cpp_consts.h
+..\..\devtools\bin\d3dx9_33.dll 
+..\..\dx10sdk\utilities\dx9_30\dx_proxy.dll 
+J:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\bin\shadercompile.exe 
+J:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\bin\shadercompile_dll.dll 
+J:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\bin\vstdlib.dll 
+J:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\bin\tier0.dll 

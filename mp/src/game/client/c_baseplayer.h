@@ -116,6 +116,7 @@ public:
 	// Handle view smoothing when going up stairs
 	void				SmoothViewOnStairs( Vector& eyeOrigin );
 	virtual float		CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed);
+	virtual void		CalcAddViewmodelCameraAnimation(Vector& eyeOrigin, QAngle& eyeAngles);
 	void				CalcViewRoll( QAngle& eyeAngles );
 	void				CreateWaterEffects( void );
 

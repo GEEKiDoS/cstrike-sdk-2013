@@ -18,6 +18,7 @@
 
 	#include "networkstringtable_clientdll.h"
 	#include "utlvector.h"
+	#include "filesystem.h"
 
 #else
 	
@@ -5627,6 +5628,10 @@ void CCSGameRules::SetBlackMarketPrices( bool bSetDefaults )
 
 #ifdef CLIENT_DLL
 
+CCSGameRules::~CCSGameRules()
+{
+}
+
 CCSGameRules::CCSGameRules()
 {
 	CSGameRules()->m_StringTableBlackMarket = NULL;
@@ -5857,3 +5862,98 @@ bool IsTakingAFreezecamScreenshot()
 }
 
 #endif
+
+ArmConfig* g_pArmConfig = nullptr;
+
+class CArmConfigLoader : public CAutoGameSystem
+{
+public:
+
+	CArmConfigLoader() : CAutoGameSystem("armconfigloader")
+	{
+	};
+
+	void LevelInitPreEntity()
+	{
+		Warning("Loading arm configs. \n");
+
+		if (g_pArmConfig != nullptr)
+		{
+			g_pArmConfig->m_CTArms.clear();
+			g_pArmConfig->m_TArms.clear();
+			g_pArmConfig->m_CTGloves.clear();
+			g_pArmConfig->m_TGloves.clear();
+		}
+		else
+		{
+			g_pArmConfig = new ArmConfig();
+		}
+		
+		auto arm_config = new KeyValues("ArmConfig");
+
+		std::string config_name = "maps/";
+
+#ifndef CLIENT_DLL
+		config_name += gpGlobals->mapname.ToCStr();
+#else
+		char mapname[50];
+		engine->GetChapterName(mapname, 50);
+		for (auto& c : mapname)
+		{
+			if (c == ' ')
+			{
+				c = '\0';
+				break;
+			}
+		}
+
+		config_name += mapname;
+#endif // !CLIENT_DLL
+		
+		config_name += ".armcfg";
+
+		if (!filesystem->FileExists(config_name.c_str()))
+			config_name = "scripts/armconfig.txt";
+
+		arm_config->LoadFromFile(filesystem, config_name.c_str(), "GAME");
+
+		auto tcfg = arm_config->FindKey("T");
+		auto tarms = tcfg->FindKey("Arms");
+		FOR_EACH_VALUE(tarms, arm)
+		{
+			g_pArmConfig->m_TArms.push_back(arm->GetString());
+		}
+
+		auto tgloves = tcfg->FindKey("Gloves");
+		FOR_EACH_VALUE(tgloves, glove)
+		{
+			g_pArmConfig->m_TGloves.push_back(glove->GetString());
+		}
+
+		auto ctcfg = arm_config->FindKey("CT");
+		auto ctarms = ctcfg->FindKey("Arms");
+		FOR_EACH_VALUE(ctarms, arm)
+		{
+			g_pArmConfig->m_CTArms.push_back(arm->GetString());
+		}
+
+		auto ctgloves = ctcfg->FindKey("Gloves");
+		FOR_EACH_VALUE(ctgloves, glove)
+		{
+			g_pArmConfig->m_CTGloves.push_back(glove->GetString());
+		}
+	}
+
+	void LevelShutdownPostEntity()
+	{
+		if (g_pArmConfig != nullptr)
+		{
+			g_pArmConfig->m_CTArms.clear();
+			g_pArmConfig->m_TArms.clear();
+			g_pArmConfig->m_CTGloves.clear();
+			g_pArmConfig->m_TGloves.clear();
+		}
+	}
+};
+
+static CArmConfigLoader g_sArmConfigLoader;

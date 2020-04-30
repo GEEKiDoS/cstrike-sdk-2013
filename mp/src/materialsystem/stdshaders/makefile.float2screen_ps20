@@ -1,0 +1,18 @@
+default:  fxctmp9_tmp\floattoscreen_ps20.inc shaders\fxc\floattoscreen_ps20.vcs fxctmp9_tmp\floattoscreen_ps20b.inc shaders\fxc\floattoscreen_ps20b.vcs
+
+fxctmp9_tmp\floattoscreen_ps20.inc shaders\fxc\floattoscreen_ps20.vcs: floattoscreen_ps2x.fxc common_hlsl_cpp_consts.h common_fxc.h common_ps_fxc.h common_pragmas.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." floattoscreen_ps2x.fxc-----floattoscreen_ps20
+	echo floattoscreen_ps2x.fxc>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+
+fxctmp9_tmp\floattoscreen_ps20b.inc shaders\fxc\floattoscreen_ps20b.vcs: floattoscreen_ps2x.fxc common_hlsl_cpp_consts.h common_fxc.h common_ps_fxc.h common_pragmas.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." floattoscreen_ps2x.fxc-----floattoscreen_ps20b
+	echo floattoscreen_ps2x.fxc>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+

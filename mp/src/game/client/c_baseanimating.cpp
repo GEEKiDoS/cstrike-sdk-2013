@@ -1587,9 +1587,9 @@ void C_BaseAnimating::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quater
 			// Apply client-side effects to the transformation matrix
 			ApplyBoneMatrixTransform( GetBoneForWrite( i ) );
 		}
+
+		PostBuildTransformations(hdr, pos, q);
 	}
-	
-	
 }
 
 //-----------------------------------------------------------------------------

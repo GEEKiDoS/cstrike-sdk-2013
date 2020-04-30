@@ -311,18 +311,29 @@ void ApplyPostProcessingPasses(PostProcessingPass *pass_list, // table of effect
 	pRenderContext->SetRenderTarget(pSaveRenderTarget);
 }
 
+PostProcessingPass HDR_Magic[] =
+{
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur1", "_rt_FullFrameFB", "_rt_MBloomL1"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur2", "_rt_MBloomL1", "_rt_MBloomL2"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur3", "_rt_MBloomL2", "_rt_MBloomL3"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur4", "_rt_MBloomL3", "_rt_MBloomL4"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur5", "_rt_MBloomL4", "_rt_MBloomL5"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur6", "_rt_MBloomL5", "_rt_MBloomL6"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur7", "_rt_MBloomL6", "_rt_MBloomL7"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blur8", "_rt_MBloomL7", "_rt_MBloomL8"),
+	PPP_PROCESS_SRCTEXTURE("dev/mb_blend","_rt_FullFrameFB",NULL),
+	PPP_END
+};
+
 PostProcessingPass HDRFinal_Float[] =
 {
-	PPP_PROCESS_SRCTEXTURE( "dev/downsample", "_rt_FullFrameFB", "_rt_SmallFB0" ),
-	PPP_PROCESS_SRCTEXTURE( "dev/blurfilterx", "_rt_SmallFB0", "_rt_SmallFB1" ),
- 	PPP_PROCESS_SRCTEXTURE( "dev/blurfiltery", "_rt_SmallFB1", "_rt_SmallFB0" ),
- 	PPP_PROCESS_SRCTEXTURE("dev/floattoscreen_combine","_rt_FullFrameFB",NULL),
+ 	PPP_PROCESS_SRCTEXTURE("dev/hdr_postprocess","_rt_FullFrameFB",NULL),
 	PPP_END
 };
 
 PostProcessingPass HDRFinal_Float_NoBloom[] =
 {
-	PPP_PROCESS_SRCTEXTURE("dev/copyfullframefb", "_rt_FullFrameFB",NULL),
+	PPP_PROCESS_SRCTEXTURE("dev/copyfullframefb_vanilla", "_rt_FullFrameFB",NULL),
 	PPP_END
 };
 
@@ -2557,6 +2568,8 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 
 		case HDR_TYPE_FLOAT:
 		{
+			DoPreBloomTonemapping(pRenderContext, x, y, w, h, flAutoExposureMin, flAutoExposureMax);
+
 			int dest_width,dest_height;
 			pRenderContext->GetRenderTargetDimensions( dest_width, dest_height );
 			if (mat_dynamic_tonemapping.GetInt() || mat_show_histogram.GetInt())
@@ -2573,45 +2586,9 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 				}
 			}
 			
-			IMaterial *pBloomMaterial;
-			pBloomMaterial = materials->FindMaterial( "dev/floattoscreen_combine", "" );
-			IMaterialVar *pBloomAmountVar = pBloomMaterial->FindVar( "$bloomamount", NULL );
-			pBloomAmountVar->SetFloatValue( flBloomScale );
+			PostProcessingPass* selectedHDR = HDR_Magic;
 			
-			PostProcessingPass* selectedHDR;
-			
-			if ( flBloomScale > 0.0 )
-			{
-				selectedHDR = HDRFinal_Float;
-			}
-			else
-			{
-				selectedHDR = HDRFinal_Float_NoBloom;
-			}
-			
-			if (mat_show_ab_hdr.GetInt())
-			{
-				ClipBox splitScreenClip;
-				
-				splitScreenClip.m_minx = splitScreenClip.m_miny = 0;
-
-				// Left half
-				splitScreenClip.m_maxx = dest_width / 2;
-				splitScreenClip.m_maxy = dest_height - 1;
-				
-				ApplyPostProcessingPasses(HDRSimulate_NonHDR, &splitScreenClip);
-				
-				// Right half
-				splitScreenClip.m_minx = splitScreenClip.m_maxx;
-				splitScreenClip.m_maxx = dest_width - 1;
-				
-				ApplyPostProcessingPasses(selectedHDR, &splitScreenClip);
-				
-			}
-			else
-			{
-				ApplyPostProcessingPasses(selectedHDR);
-			}
+			ApplyPostProcessingPasses(selectedHDR);
 
 			pRenderContext->SetRenderTarget(NULL);
 			if ( mat_show_histogram.GetInt() && (engine->GetDXSupportLevel()>=90))
@@ -2624,6 +2601,8 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 				SetToneMapScale( pRenderContext, scalevalue, flAutoExposureMin, flAutoExposureMax );
 			}
 			pRenderContext->SetRenderTarget( NULL );
+
+			DoPostBloomTonemapping(pRenderContext, x, y, w, h, flAutoExposureMin, flAutoExposureMax);
 			break;
 		}
 	}

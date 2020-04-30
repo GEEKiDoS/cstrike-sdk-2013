@@ -7,6 +7,8 @@
 #include "cbase.h"
 #include "baseviewmodel_shared.h"
 #include "datacache/imdlcache.h"
+#include "filesystem.h"
+#include "cs_gamerules.h"
 
 #if defined( CLIENT_DLL )
 #include "iprediction.h"
@@ -42,6 +44,11 @@ CBaseViewModel::CBaseViewModel()
 	// NOTE: We do this here because the color is never transmitted for the view model.
 	m_nOldAnimationParity = 0;
 	m_EntClientFlags |= ENTCLIENTFLAG_ALWAYS_INTERPOLATE;
+
+	m_flCamDriverAppliedTime = 0;
+	m_flCamDriverWeight = 0;
+	m_vecCamDriverLastPos.Init();
+	m_angCamDriverLastAng.Init();
 #endif
 	SetRenderColor( 255, 255, 255, 255 );
 
@@ -72,8 +79,18 @@ void CBaseViewModel::UpdateOnRemove( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+extern ArmConfig* g_pArmConfig;
+
 void CBaseViewModel::Precache( void )
 {
+	for (auto mdl : g_pArmConfig->m_CTArms)
+		PrecacheModel(mdl.c_str());
+	for (auto mdl : g_pArmConfig->m_TArms)
+		PrecacheModel(mdl.c_str());
+	for (auto mdl : g_pArmConfig->m_CTGloves)
+		PrecacheModel(mdl.c_str());
+	for (auto mdl : g_pArmConfig->m_TGloves)
+		PrecacheModel(mdl.c_str());
 }
 
 //-----------------------------------------------------------------------------
@@ -380,6 +397,25 @@ void CBaseViewModel::SendViewModelMatchingSequence( int sequence )
 
 #if defined( CLIENT_DLL )
 #include "ivieweffects.h"
+
+void CBaseViewModel::PostBuildTransformations(CStudioHdr* pStudioHdr, Vector* pos, Quaternion q[])
+{
+	int nCamDriverBone = LookupBone("cam_driver");
+	if (nCamDriverBone != -1)
+	{
+		m_flCamDriverAppliedTime = gpGlobals->curtime;
+		VectorCopy(pos[nCamDriverBone], m_vecCamDriverLastPos);
+		QuaternionAngles(q[nCamDriverBone], m_angCamDriverLastAng);
+
+		if (ShouldFlipViewModel())
+		{
+			m_angCamDriverLastAng[YAW] = -m_angCamDriverLastAng[YAW];
+			m_vecCamDriverLastPos.y = -m_vecCamDriverLastPos.y;
+		}
+	}
+}
+
+
 #endif
 
 void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition, const QAngle& eyeAngles )
@@ -686,6 +722,43 @@ bool CBaseViewModel::GetAttachmentVelocity( int number, Vector &originVel, Quate
 		return m_hWeapon.Get()->GetAttachmentVelocity( number, originVel, angleVel );
 
 	return BaseClass::GetAttachmentVelocity( number, originVel, angleVel );
+}
+
+//C_ViewmodelAttachmentModel
+//C_ViewmodelAttachmentModel
+//C_ViewmodelAttachmentModel
+//C_ViewmodelAttachmentModel
+//--------------------------------------------------------------------------------------------------------  
+bool C_ViewmodelAttachmentModel::InitializeAsClientEntity(const char* pszModelName, RenderGroup_t rg = RENDER_GROUP_VIEW_MODEL_OPAQUE)
+{
+	if (!BaseClass::InitializeAsClientEntity(pszModelName, rg))
+		return false;
+
+	AddEffects(EF_BONEMERGE);
+	AddEffects(EF_BONEMERGE_FASTCULL);
+	AddEffects(EF_NODRAW);
+	return true;
+}
+
+void C_ViewmodelAttachmentModel::SetViewmodel(C_BaseViewModel* pVM)
+{
+	m_hViewmodel = pVM;
+}
+
+int C_ViewmodelAttachmentModel::InternalDrawModel(int flags)
+{
+	CMatRenderContextPtr pRenderContext(materials);
+
+	C_BaseViewModel* pViewmodel = m_hViewmodel;
+
+	if (pViewmodel && pViewmodel->ShouldFlipViewModel())
+		pRenderContext->CullMode(MATERIAL_CULLMODE_CW);
+
+	int ret = BaseClass::InternalDrawModel(flags);
+
+	pRenderContext->CullMode(MATERIAL_CULLMODE_CCW);
+
+	return ret;
 }
 
 #endif

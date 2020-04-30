@@ -153,6 +153,7 @@ public:
 
 	DECLARE_CLIENTCLASS_NOBASE(); // This makes datatables able to access our private vars.
 	CCSGameRules();
+	virtual ~CCSGameRules();
 
 #else
 
@@ -533,5 +534,18 @@ int UTIL_HumansInGame( bool ignoreSpectators = false );
 	bool EntityPlacementTest( CBaseEntity *pMainEnt, const Vector &vOrigin, Vector &outPos, bool bDropToGround );
 
 #endif
+
+#include <vector>
+#include <string>
+
+class ArmConfig
+{
+public:
+	std::vector<std::string> m_TArms;
+	std::vector<std::string> m_TGloves;
+	std::vector<std::string> m_CTArms;
+	std::vector<std::string> m_CTGloves;
+};
+
 
 #endif // TF_GAMERULES_H

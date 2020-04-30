@@ -1615,6 +1615,7 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 	Vector vecBaseEyePosition = eyeOrigin;
 
 	CalcViewRoll( eyeAngles );
+	CalcAddViewmodelCameraAnimation( eyeOrigin, eyeAngles );
 
 	// Apply punch angle
 	VectorAdd( eyeAngles, m_Local.m_vecPunchAngle, eyeAngles );
@@ -1766,6 +1767,33 @@ void CBasePlayer::CalcViewRoll( QAngle& eyeAngles )
 
 	float side = CalcRoll( GetAbsAngles(), GetAbsVelocity(), sv_rollangle.GetFloat(), sv_rollspeed.GetFloat() );
 	eyeAngles[ROLL] += side;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Allow the viewmodel to layer in artist-authored additive camera animation (to make some first-person anims 'punchier')
+//-----------------------------------------------------------------------------
+#define CAM_DRIVER_RETURN_TO_NORMAL 0.25f
+#define CAM_DRIVER_RETURN_TO_NORMAL_GAIN 0.8f
+void CBasePlayer::CalcAddViewmodelCameraAnimation(Vector& eyeOrigin, QAngle& eyeAngles)
+{
+#ifdef CLIENT_DLL
+	CBaseViewModel* vm = GetViewModel();
+	if (vm && vm->GetModelPtr())
+	{
+		float flTimeDelta = clamp((gpGlobals->curtime - vm->m_flCamDriverAppliedTime), 0, CAM_DRIVER_RETURN_TO_NORMAL);
+		if (flTimeDelta < CAM_DRIVER_RETURN_TO_NORMAL)
+		{
+			vm->m_flCamDriverWeight = clamp(Gain(RemapValClamped(flTimeDelta, 0.0f, CAM_DRIVER_RETURN_TO_NORMAL, 1.0f, 0.0f), CAM_DRIVER_RETURN_TO_NORMAL_GAIN), 0, 1);
+
+			//eyeOrigin += (vm->m_vecCamDriverLastPos * vm->m_flCamDriverWeight);
+			eyeAngles += (vm->m_angCamDriverLastAng * vm->m_flCamDriverWeight);
+		}
+		else
+		{
+			vm->m_flCamDriverWeight = 0;
+		}
+	}
+#endif
 }
 
 

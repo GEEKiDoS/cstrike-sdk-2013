@@ -106,6 +106,7 @@ public:
 	~C_BaseAnimating();
 
 	virtual C_BaseAnimating*		GetBaseAnimating() { return this; }
+	virtual void					PostBuildTransformations(CStudioHdr* pStudioHdr, Vector *pos, Quaternion q[]) {};
 
 	bool UsesPowerOfTwoFrameBufferTexture( void );
 
