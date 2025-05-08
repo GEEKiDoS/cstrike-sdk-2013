@@ -83,6 +83,32 @@ $Configuration
 
 $Project
 {
+	$Folder "JavaScript Scripting"
+	{
+		$File	"scripting\scripting.cpp"
+		$File	"scripting\scripting.h"
+
+		$Folder "QuickJs Engine"
+		{
+			$File	"scripting\qjs\quickjs-amalgam.c"
+			{
+				$Configuration
+				{
+					$Compiler
+					{
+						$Create/UsePrecompiledHeader "Not Using Precompiled Headers"
+						$CompileAs "Compile as C Code (/TC)"
+						$AdditionalOptions "/std:c11 /experimental:c11atomics"
+						$WarningLevel "Off: Turn Off All Warnings (/W0)"
+					}
+				}
+			}
+
+			$File	"scripting\qjs\quickjs.h"
+			$File	"scripting\qjs\quickjs-libc.h"
+		}
+	}
+
 	$Folder "Replay"
 	{
 		$File	"gamedll_replay.cpp"

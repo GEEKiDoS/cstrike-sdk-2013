@@ -1,0 +1,87 @@
+"Filters"
+{
+	"gamelist"		"internet"
+	"Filters"
+	{
+		"CustomGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+			"location"		"0"
+		}
+		"FavoriteGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+		}
+		"HistoryGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+		}
+		"SpectateGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+			"location"		"0"
+		}
+		"LanGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+		}
+		"FriendsGames"
+		{
+			"appid"		"0x0000000000000000"
+			"MaxPlayerCount"		"0"
+			"ping"		"0"
+			"NoFull"		"0"
+			"NoEmpty"		"0"
+			"NoPassword"		"0"
+			"Secure"		"0"
+			"QuickList"		"0"
+			"tagsinclude"		"0"
+			"Replay"		"0"
+		}
+	}
+}
