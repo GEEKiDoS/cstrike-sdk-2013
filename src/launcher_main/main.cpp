@@ -217,16 +217,16 @@ static bool GetGameInstallDir( const char *pRootDir, char *pszBuf, int nBufSize 
 	}
 
 	uint32_t unLength = 0;
-	if ( pSteamApps->BIsAppInstalled( k_unSDK2013MPAppId ) )
+	if ( pSteamApps->BIsAppInstalled( k_unMyModAppid ) )
 	{
-		unLength = pSteamApps->GetAppInstallDir( k_unSDK2013MPAppId, pszBuf, nBufSize );
+		unLength = pSteamApps->GetAppInstallDir( k_unMyModAppid, pszBuf, nBufSize );
 	}
 
 	UnloadSteam();
 
 	if ( unLength == 0 )
 	{
-		MessageBox( 0, "Source SDK 2013 Multiplayer (243750) must be installed to launch this mod.", "Launcher Error", MB_OK );
+		MessageBox( 0, "Base game must be installed to launch this mod.", "Launcher Error", MB_OK );
 		return false;
 	}
 

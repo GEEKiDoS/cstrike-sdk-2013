@@ -61,6 +61,7 @@ $Configuration
 		// Started appearning now since compiler updates... We have warnings as errors on Win32, so disable this there.
 		$DisableSpecificWarnings	"$BASE;4101" [$WIN32 && $AT_LEAST_VS2022] // 'Start': unreferenced local variable
 
+		$DisableSpecificWarnings	"$BASE;4819;4267;4101"
 		// Having lots of warnings makes it harder to notice new, and possibly
 		// important warnings, both on buildbot and in the output window. Lots
 		// of warnings also makes it harder to skip through errors in the output

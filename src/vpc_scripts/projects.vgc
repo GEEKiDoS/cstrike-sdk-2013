@@ -17,6 +17,7 @@ $Project "client"
 {
 	"game\client\client_tf.vpc"			[$TF]
 	"game\client\client_hl2mp.vpc"		[$HL2MP]
+	"game\client\client_cstrike.vpc"	[$CSTRIKE]
 }
 
 $Project "fgdlib"
@@ -28,6 +29,7 @@ $Project "game_shader_generic_example"
 {
 	"materialsystem\stdshaders\game_shader_generic_example_hl2mp.vpc" [$HL2MP]
 	"materialsystem\stdshaders\game_shader_generic_example_tf.vpc" [$TF]
+	"materialsystem\stdshaders\game_shader_generic_example_cstrike.vpc" [$CSTRIKE]
 }
 
 // Use this project if you want to override all std shaders with your own.
@@ -36,6 +38,7 @@ $Project "game_shader_generic_std"
 {
 	"materialsystem\stdshaders\game_shader_generic_std_hl2mp.vpc" [$HL2MP]
 	"materialsystem\stdshaders\game_shader_generic_std_tf.vpc" [$TF]
+	"materialsystem\stdshaders\game_shader_generic_std_cstrike.vpc" [$CSTRIKE]
 }
 
 $Project "glview"
@@ -52,12 +55,14 @@ $Project "server"
 {
 	"game\server\server_tf.vpc"			[$TF]
 	"game\server\server_hl2mp.vpc"		[$HL2MP]
+	"game\server\server_cstrike.vpc"	[$CSTRIKE]
 }
 
 $Project "launcher_main"
 {
 	"launcher_main\launcher_main_mod_hl2mp.vpc" [$HL2MP]
 	"launcher_main\launcher_main_mod_tf.vpc" [$TF]
+	"launcher_main\launcher_main_mod_cstrike.vpc" [$CSTRIKE]
 }
 
 $Project "mathlib"
