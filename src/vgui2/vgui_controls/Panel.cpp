@@ -2999,7 +2999,7 @@ void Panel::OnThink()
 			return;
 		}
 
-		if ( m_pDragDrop->m_hCurrentDrop != 0 )
+		if ( m_pDragDrop->m_hCurrentDrop != nullptr)
 		{
 			if ( !input()->IsMouseDown( MOUSE_LEFT ) )
 			{
@@ -6919,7 +6919,7 @@ void Panel::OnFinishDragging( bool mousereleased, MouseCode code, bool abort /*=
 		Q_strncpy( cmd, "default", sizeof( cmd ) );
 
 		if ( mousereleased &&
-			m_pDragDrop->m_hCurrentDrop != 0 &&
+			m_pDragDrop->m_hCurrentDrop != nullptr &&
 			m_pDragDrop->m_hDropContextMenu.Get() )
 		{
 			Menu *menu = m_pDragDrop->m_hDropContextMenu;
@@ -7178,7 +7178,7 @@ void Panel::OnContinueDragging()
 		}
 	}
 
-	if ( m_pDragDrop->m_hCurrentDrop != 0 &&
+	if ( m_pDragDrop->m_hCurrentDrop != nullptr &&
 		m_pDragDrop->m_hDropContextMenu.Get() )
 	{
 		Menu *menu = m_pDragDrop->m_hDropContextMenu;

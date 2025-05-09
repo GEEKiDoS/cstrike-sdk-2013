@@ -76,59 +76,18 @@ extern "C"
 	}
 }
 
-CScriptingSystem::CScriptingSystem(): CAutoGameSystemPerFrame("JSScriptingEngine")
+CUtlVector<CScriptingSystem::ModuleEntry> CScriptingSystem::modules_;
+
+CScriptingSystem::CScriptingSystem() : CAutoGameSystemPerFrame("JSScriptingEngine")
 {
 	rt_ = nullptr;
 	ctx_ = nullptr;
 }
 
-namespace js_console
+void CScriptingSystem::LevelInitPreEntity()
 {
-	JSValue Log(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-	{
-		auto result = js_std_sprintf(ctx, this_val, argc, argv);
-		auto* s = JS_ToCString(ctx, result);
+	Msg("Initializing Scripting...\n");
 
-		if (s)
-		{
-			Msg("%s\n", s);
-		}
-
-		JS_FreeValue(ctx, result);
-		return JS_UNDEFINED;
-	}
-
-	JSValue Warn(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-	{
-		auto result = js_std_sprintf(ctx, this_val, argc, argv);
-		auto* s = JS_ToCString(ctx, result);
-
-		if (s)
-		{
-			Warning("%s\n", s);
-		}
-
-		JS_FreeValue(ctx, result);
-		return JS_UNDEFINED;
-	}
-
-	JSValue Error(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
-	{
-		auto result = js_std_sprintf(ctx, this_val, argc, argv);
-		auto* s = JS_ToCString(ctx, result);
-
-		if (s)
-		{
-			::Error("%s\n", s);
-		}
-
-		JS_FreeValue(ctx, result);
-		return JS_UNDEFINED;
-	}
-}
-
-bool CScriptingSystem::Init()
-{
 	JSMallocFunctions tier0_malloc_functions
 	{
 		tier0::js_calloc, tier0::js_malloc,
@@ -146,44 +105,71 @@ bool CScriptingSystem::Init()
 	js_init_module_os(ctx_, "os");
 	js_init_module_bjson(ctx_, "bjson");
 
-	auto global = JS_GetGlobalObject(ctx_);
-	auto console = JS_NewObject(ctx_);
+	for (const auto& entry : modules_)
+	{
+		Msg("Loading Module %s\n", entry.name);
+		entry.mod->Init(ctx_);
+	}
+}
 
-	JS_SetPropertyStr(ctx_, console, "log",
-					  JS_NewCFunction(ctx_, js_console::Log, "log", 1));
-	JS_SetPropertyStr(ctx_, console, "warn",
-					  JS_NewCFunction(ctx_, js_console::Warn, "warn", 1));
-	JS_SetPropertyStr(ctx_, console, "error",
-					  JS_NewCFunction(ctx_, js_console::Error, "error", 1));
+void CScriptingSystem::LevelShutdownPostEntity()
+{
+	if (ctx_)
+	{
+		JS_FreeContext(ctx_);
+		ctx_ = nullptr;
+	}
 
-	JS_SetPropertyStr(ctx_, global, "console", console);
+	if (rt_)
+	{
+		JS_FreeRuntime(rt_);
+		rt_ = nullptr;
+	}
+}
 
-	JS_FreeValue(ctx_, global);
-
-	return true;
+void CScriptingSystem::FrameUpdatePreEntityThink()
+{
+	js_std_loop(ctx_);
 }
 
 void CScriptingSystem::Shutdown()
 {
-	JS_FreeContext(ctx_);
-	JS_FreeRuntime(rt_);
+	for (const auto& entry : modules_)
+	{
+		delete entry.mod;
+	}
 
-	ctx_ = nullptr;
-	rt_ = nullptr;
+	modules_.Purge();
 }
 
-void CScriptingSystem::FrameUpdatePostEntityThink()
+void CScriptingSystem::Register(ModuleEntry module)
 {
-	js_std_loop(ctx_);
+	modules_.AddToTail(module);
 }
 
 void CScriptingSystem::Eval(const char* code)
 {
 	auto value = JS_Eval(ctx_, code, V_strlen(code), "<CONSOLE>", JS_EVAL_TYPE_GLOBAL);
-	
+
 	if (!JS_IsUndefined(value))
 	{
-		js_console::Log(ctx_, JS_UNDEFINED, 1, &value);
+		auto* s = JS_ToCString(ctx_, value);
+		if (!s && JS_IsObject(value))
+		{
+			JS_FreeValue(ctx_, JS_GetException(ctx_));
+			JSValue t = JS_ToObjectString(ctx_, value);
+			s = JS_ToCString(ctx_, t);
+			JS_FreeValue(ctx_, t);
+		}
+
+		if (s)
+		{
+			Msg("%s\n", s);
+		}
+		else
+		{
+			Msg("<exception>\n");
+		}
 	}
 
 	JS_FreeValue(ctx_, value);

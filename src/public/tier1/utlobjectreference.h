@@ -103,6 +103,11 @@ public:
 		return ( o.m_pObject == m_pObject );
 	}	
 
+	FORCEINLINE bool operator==( T* ptr ) const
+	{
+		return ( m_pObject == ptr );
+	}	
+
 public:
 	CUtlReference *m_pNext;
 	CUtlReference *m_pPrev;

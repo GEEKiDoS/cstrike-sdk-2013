@@ -11,7 +11,7 @@
 					"gamelist"
 					{
 						"configVersion"		"2"
-						"lastBarWidth"		"672"
+						"lastBarWidth"		"605"
 						"0_hidden"		"0"
 						"0_width"		"16"
 						"1_hidden"		"0"
@@ -19,21 +19,21 @@
 						"2_hidden"		"0"
 						"2_width"		"0"
 						"3_hidden"		"0"
-						"3_width"		"51"
+						"3_width"		"20"
 						"4_hidden"		"1"
 						"4_width"		"71"
 						"5_hidden"		"0"
 						"5_width"		"124"
 						"6_hidden"		"0"
-						"6_width"		"61"
+						"6_width"		"55"
 						"7_hidden"		"0"
-						"7_width"		"44"
+						"7_width"		"40"
 						"8_hidden"		"0"
 						"8_width"		"99"
 						"9_hidden"		"0"
-						"9_width"		"61"
+						"9_width"		"55"
 						"10_hidden"		"0"
-						"10_width"		"201"
+						"10_width"		"181"
 					}
 				}
 				"FavoriteGames"
@@ -193,7 +193,7 @@
 				}
 			}
 			"xpos"		"96"
-			"ypos"		"480"
+			"ypos"		"240"
 			"wide"		"960"
 			"tall"		"660"
 		}

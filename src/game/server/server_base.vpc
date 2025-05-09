@@ -88,6 +88,16 @@ $Project
 		$File	"scripting\scripting.cpp"
 		$File	"scripting\scripting.h"
 
+		$Folder "Modules"
+		{
+			$File	"scripting\modules\console.cpp"
+			$File	"scripting\modules\vector.cpp"
+			$File	"scripting\modules\engine.cpp"
+			$File	"scripting\modules\entity.cpp"
+
+			$File	"scripting\modules\vector.h"
+		}
+
 		$Folder "QuickJs Engine"
 		{
 			$File	"scripting\qjs\quickjs-amalgam.c"

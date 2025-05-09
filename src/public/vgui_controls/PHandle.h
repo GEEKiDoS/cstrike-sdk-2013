@@ -36,6 +36,7 @@ public:
 	Panel * operator = (Panel *pPanel)		{ return Set(pPanel); }
 
 	bool operator == (Panel *pPanel)		{ return (Get() == pPanel); }
+	bool operator == (PHandle handle)		{ return (Get() == handle.Get()); }
 	operator bool ()						{ return Get() != 0; }
 
 private:

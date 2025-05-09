@@ -46,6 +46,7 @@ public:
 	
 	// operator==
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
+	bool operator==( UtlSymId_t id ) const { return m_Id == id; }
 	bool operator==( const char* pStr ) const;
 	
 	// Is valid?

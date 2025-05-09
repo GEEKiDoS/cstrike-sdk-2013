@@ -2434,7 +2434,7 @@ FORCEINLINE Vector CParticleCollection::GetControlPointVelocityAtCurrentTime( in
 
 FORCEINLINE bool CParticleCollection::IsValid( void ) const 
 { 
-	return ( m_pDef != NULL && m_pDef->GetMaterial() );  
+	return ( m_pDef != nullptr && m_pDef->GetMaterial() );  
 }
 
 

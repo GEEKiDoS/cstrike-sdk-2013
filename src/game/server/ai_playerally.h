@@ -181,7 +181,7 @@ enum AIConceptFlags_t
 
 struct ConceptInfo_t
 {
-	AIConcept_t			concept;
+	AIConcept_t			koncept;
 	ConceptCategory_t   category;
 	float				minGlobalCategoryDelay;
 	float				maxGlobalCategoryDelay;
@@ -205,12 +205,12 @@ public:
 
 	void AddCustomConcept( const ConceptInfo_t &conceptInfo );
 	ConceptCategoryInfo_t *GetConceptCategoryInfo( ConceptCategory_t category );
-	ConceptInfo_t *GetConceptInfo( AIConcept_t concept );
-	void OnSpokeConcept( CAI_PlayerAlly *pPlayerAlly, AIConcept_t concept, AI_Response *response  );
+	ConceptInfo_t *GetConceptInfo( AIConcept_t koncept );
+	void OnSpokeConcept( CAI_PlayerAlly *pPlayerAlly, AIConcept_t koncept, AI_Response *response  );
 
 	void SetCategoryDelay( ConceptCategory_t category, float minDelay, float maxDelay = 0.0 );
 	bool CategoryDelayExpired( ConceptCategory_t category );
-	bool ConceptDelayExpired( AIConcept_t concept );
+	bool ConceptDelayExpired( AIConcept_t koncept );
 
 private:
 
@@ -247,7 +247,7 @@ enum AISpeechTargetSearchFlags_t
 
 struct AISpeechSelection_t
 {
-	std::string		concept;
+	std::string		koncept;
 	AI_Response		Response;
 	EHANDLE			hSpeechTarget;
 };
@@ -327,14 +327,14 @@ public:
 	//---------------------------------
 
 	virtual bool SelectQuestionAndAnswerSpeech( AISpeechSelection_t *pSelection );
-	virtual void PostSpeakDispatchResponse( AIConcept_t concept, AI_Response *response );
+	virtual void PostSpeakDispatchResponse( AIConcept_t koncept, AI_Response *response );
 	bool		 SelectQuestionFriend( CBaseEntity *pFriend, AISpeechSelection_t *pSelection );
 	bool		 SelectAnswerFriend( CBaseEntity *pFriend, AISpeechSelection_t *pSelection, bool bRespondingToHello );
 
 	//---------------------------------
 
-	bool 		SelectSpeechResponse( AIConcept_t concept, const char *pszModifiers, CBaseEntity *pTarget, AISpeechSelection_t *pSelection );
-	void		SetPendingSpeech( AIConcept_t concept, AI_Response &Response );
+	bool 		SelectSpeechResponse( AIConcept_t koncept, const char *pszModifiers, CBaseEntity *pTarget, AISpeechSelection_t *pSelection );
+	void		SetPendingSpeech( AIConcept_t koncept, AI_Response &Response );
 	void 		ClearPendingSpeech();
 	bool		HasPendingSpeech()	{ return !m_PendingConcept.empty(); }
 
@@ -357,9 +357,9 @@ public:
 	bool		IsOkToCombatSpeak( void );
 	bool		IsOkToSpeakInResponseToPlayer( void );
 	
-	bool		ShouldSpeakRandom( AIConcept_t concept, int iChance );
-	bool		IsAllowedToSpeak( AIConcept_t concept, bool bRespondingToPlayer = false );
-	virtual bool SpeakIfAllowed( AIConcept_t concept, const char *modifiers = NULL, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
+	bool		ShouldSpeakRandom( AIConcept_t koncept, int iChance );
+	bool		IsAllowedToSpeak( AIConcept_t koncept, bool bRespondingToPlayer = false );
+	virtual bool SpeakIfAllowed( AIConcept_t koncept, const char *modifiers = NULL, bool bRespondingToPlayer = false, char *pszOutResponseChosen = NULL, size_t bufsize = 0 );
 	void		ModifyOrAppendCriteria( AI_CriteriaSet& set );
 
 	//---------------------------------
@@ -373,7 +373,7 @@ public:
 
 	//---------------------------------
 
-	void		OnSpokeConcept( AIConcept_t concept, AI_Response *response );
+	void		OnSpokeConcept( AIConcept_t koncept, AI_Response *response );
 	void		OnStartSpeaking();
 
 	// Inputs
