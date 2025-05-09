@@ -43,38 +43,82 @@ extern "C"
 	uint8_t* js_load_file(JSContext* ctx, size_t* pbuf_len, const char* filename)
 	{
 		char path[MAX_PATH];
-		V_snprintf(path, MAX_PATH, "scripts/server/%s");
+		V_snprintf(path, MAX_PATH, "scripts/server/%s", filename);
 
 		if (!g_pFullFileSystem->FileExists(path))
 		{
-			Error("script %s not exists\n", filename);
+			Warning("script %s not exists\n", filename);
 			return nullptr;
 		}
 
 		CUtlBuffer buffer;
 		if (!g_pFullFileSystem->ReadFile(path, nullptr, buffer))
 		{
-			Error("Can not read script %s\n", filename);
+			Warning("Can not read script %s\n", filename);
 			return nullptr;
 		}
 
 		uint8_t* result = nullptr;
+		*pbuf_len = buffer.TellPut();
 
 		if (ctx)
 		{
-			result = (uint8_t*)js_malloc(ctx, buffer.TellPut() + 1);
+			result = (uint8_t*)js_malloc(ctx, *pbuf_len);
 		}
 		else
 		{
-			result = (uint8_t*)g_pMemAlloc->Alloc(buffer.TellPut() + 1);
+			result = (uint8_t*)g_pMemAlloc->Alloc(*pbuf_len);
 		}
 
-		V_memcpy(result, buffer.Base(), buffer.TellPut());
-		result[buffer.TellPut()] = 0;
+		V_memcpy(result, buffer.Base(), *pbuf_len);
 
+		Msg("Load module %s...\n%s\n", filename, result);
 		return result;
 	}
 }
+
+namespace
+{
+	void DumpException(JSContext* ctx, JSValueConst ex)
+	{
+		auto str = JS_ToCString(ctx, ex);
+		if (str)
+		{
+			Warning("%s\n", str);
+			JS_FreeCString(ctx, str);
+		}
+		else
+		{
+			Warning("[exception]\n");
+		}
+
+		JSValue stack;
+		if (JS_IsError(ctx, ex))
+		{
+			stack = JS_GetPropertyStr(ctx, ex, "stack");
+		}
+		else
+		{
+			js_std_cmd(/*ErrorBackTrace*/2, ctx, &stack);
+		}
+
+		if (!JS_IsUndefined(stack))
+		{
+			str = JS_ToCString(ctx, stack);
+			Warning("%s\n", str);
+			JS_FreeCString(ctx, str);
+		}
+	}
+
+	void JSPromiseRejectionTracker(JSContext* ctx, JSValueConst, JSValueConst reason, bool is_handled, void*)
+	{
+		if (is_handled)
+			return;
+
+		DumpException(ctx, reason);
+	}
+}
+
 
 CUtlVector<CScriptingSystem::ModuleEntry> CScriptingSystem::modules_;
 
@@ -110,6 +154,14 @@ void CScriptingSystem::LevelInitPreEntity()
 		Msg("Loading Module %s\n", entry.name);
 		entry.mod->Init(ctx_);
 	}
+
+	JS_SetHostPromiseRejectionTracker(rt_, JSPromiseRejectionTracker, nullptr);
+	JS_SetModuleLoaderFunc(rt_, nullptr, js_module_loader, nullptr);
+}
+
+void CScriptingSystem::LevelInitPostEntity()
+{
+	JS_LoadModule(ctx_, "index.js", "index.js");
 }
 
 void CScriptingSystem::LevelShutdownPostEntity()
@@ -132,6 +184,10 @@ void CScriptingSystem::FrameUpdatePreEntityThink()
 	js_std_loop(ctx_);
 }
 
+void CScriptingSystem::FrameUpdatePostEntityThink()
+{
+}
+
 void CScriptingSystem::Shutdown()
 {
 	for (const auto& entry : modules_)
@@ -149,6 +205,11 @@ void CScriptingSystem::Register(ModuleEntry module)
 
 void CScriptingSystem::Eval(const char* code)
 {
+	if (!ctx_)
+	{
+		Msg("Server is not running.\n");
+	}
+
 	auto value = JS_Eval(ctx_, code, V_strlen(code), "<CONSOLE>", JS_EVAL_TYPE_GLOBAL);
 
 	if (!JS_IsUndefined(value))
@@ -165,10 +226,13 @@ void CScriptingSystem::Eval(const char* code)
 		if (s)
 		{
 			Msg("%s\n", s);
+			JS_FreeCString(ctx_, s);
 		}
 		else
 		{
-			Msg("<exception>\n");
+			JSValue e = JS_GetException(ctx_);
+			DumpException(ctx_, e);
+			JS_FreeValue(ctx_, e);
 		}
 	}
 

@@ -17,8 +17,10 @@ public:
 	CScriptingSystem();
 
 	void LevelInitPreEntity() override;
+	void LevelInitPostEntity() override;
 	void LevelShutdownPostEntity() override;
 	void FrameUpdatePreEntityThink() override;
+	void FrameUpdatePostEntityThink() override;
 	void Shutdown() override;
 	void Eval(const char* code);
 

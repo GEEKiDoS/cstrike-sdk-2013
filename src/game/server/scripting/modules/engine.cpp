@@ -7,6 +7,85 @@
 
 namespace Engine
 {
+	namespace Cvar
+	{
+		JSClassID classId;
+
+		JSValue ToJSValue(JSContext* ctx, ConVar* cvar)
+		{
+			auto cvar_obj = JS_NewObjectClass(ctx, classId);
+			JS_SetOpaque(cvar_obj, cvar);
+
+			return cvar_obj;
+		}
+
+		JSValue GetValue(JSContext* ctx, JSValueConst this_val)
+		{
+			auto* cvar = (ConVar*)JS_GetOpaque(this_val, classId);
+
+			if (!cvar)
+			{
+				return JS_ThrowInternalError(ctx, "cvar is nullptr");
+			}
+
+			return JS_NewString(ctx, cvar->GetString());
+		}
+
+		JSValue SetValue(JSContext* ctx, JSValueConst this_val, JSValueConst val)
+		{
+			auto* cvar = (ConVar*)JS_GetOpaque(this_val, classId);
+
+			if (!cvar)
+			{
+				return JS_ThrowInternalError(ctx, "cvar is nullptr");
+			}
+
+			if (val.tag == JS_TAG_BOOL)
+			{
+				cvar->SetValue(JS_VALUE_GET_BOOL(val));
+			}
+			else if (val.tag == JS_TAG_INT)
+			{
+				cvar->SetValue(JS_VALUE_GET_INT(val));
+			}
+			else if (val.tag == JS_TAG_FLOAT64)
+			{
+				cvar->SetValue((float) JS_VALUE_GET_FLOAT64(val));
+			}
+			else if (val.tag == JS_TAG_STRING)
+			{
+				auto str = JS_ToCString(ctx, val);
+				JS_FreeCString(ctx, str);
+				cvar->SetValue(str);
+			}
+			else
+			{
+				return JS_ThrowInternalError(ctx, "new value must be string, number or bool");
+			}
+
+			return JS_NewString(ctx, cvar->GetString());
+		}
+
+		void Finalizer(JSRuntime*, JSValue) {}
+
+		JSClassDef classDef{ "CVar", Finalizer };
+		JSCFunctionListEntry methods[] = {
+			JS_CGETSET_DEF("value", GetValue, SetValue),
+		};
+
+		void Init(JSContext* ctx)
+		{
+			auto* rt = JS_GetRuntime(ctx);
+
+			JS_NewClassID(rt, &Cvar::classId);
+			JS_NewClass(rt, Cvar::classId, &Cvar::classDef);
+
+			JSValue proto = JS_NewObject(ctx);
+			JS_SetPropertyFunctionList(ctx, proto, methods, _countof(methods));
+			JS_SetClassProto(ctx, classId, proto);
+		}
+	}
+
 	static JSValue ServerCommand(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
 		if (!argc)
@@ -17,37 +96,28 @@ namespace Engine
 
 		const auto* command = JS_ToCString(ctx, *argv);
 		engine->ServerCommand(command);
+		JS_FreeCString(ctx, command);
 
 		return JS_UNDEFINED;
 	}
 
-	static JSValue ConVarToJSValue(JSContext* ctx, ConVar* cvar)
+	static JSValue FindCVar(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
-		/*auto cvar_obj = JS_NewObjectClass(ctx, );
-		auto cvar_prototype = JS_NewObject(ctx);
+		if (!argc)
+			return JS_ThrowTypeError(ctx, "findCVar takes 1 arg");
 
-		JS_SetOpaque()
+		if (!JS_IsString(*argv))
+			return JS_ThrowTypeError(ctx, "findCVar arg 0 must be string");
 
-		JS_SetPropertyStr(ctx, cvar_obj, "__ptr", JS_MKPTR())*/
-		
-		auto v = g_pCVar->FindVar("test");
+		const auto* name = JS_ToCString(ctx, *argv);
+		auto* cvar = g_pCVar->FindVar(name);
+		JS_FreeCString(ctx, name);
+
+		if (!cvar)
+			return JS_UNDEFINED;
+
+		return Cvar::ToJSValue(ctx, cvar);
 	}
-
-	JSValue CVarGetValue(JSContext* ctx, JSValueConst this_val)
-	{
-		return JS_UNDEFINED;
-	}
-
-	JSValue CVarSetValue(JSContext* ctx, JSValueConst this_val, JSValueConst val)
-	{
-		return JS_UNDEFINED;
-	}
-
-	void CVarFinalizer(JSRuntime*, JSValue) {}
-	JSClassDef cvar_class_def{ "CVar", CVarFinalizer };
-	JSCFunctionListEntry cvar_methods[] = {
-		JS_CGETSET_DEF("value", CVarGetValue, CVarSetValue),
-	};
 
 	class Module : public IScriptingModule
 	{
@@ -59,9 +129,13 @@ namespace Engine
 
 			JS_SetPropertyStr(ctx, engine_object, "serverCommand",
 							  JS_NewCFunction(ctx, ServerCommand, "serverCommand", 1));
+			JS_SetPropertyStr(ctx, engine_object, "findCVar",
+							  JS_NewCFunction(ctx, FindCVar, "findCVar", 1));
 
 			JS_SetPropertyStr(ctx, global, "engine", engine_object);
 			JS_FreeValue(ctx, global);
+
+			Cvar::Init(ctx);
 		}
 	};
 }
