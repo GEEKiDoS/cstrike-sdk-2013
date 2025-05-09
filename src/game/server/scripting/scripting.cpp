@@ -117,6 +117,16 @@ namespace
 
 		DumpException(ctx, reason);
 	}
+
+	static JSValue NextFrame(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	{
+		JSValue resolveFunctions[2];
+		JSValue promise = JS_NewPromiseCapability(ctx, resolveFunctions);
+
+		g_pScriptingEngine->AddNextFrameResolve({ promise, resolveFunctions[0], resolveFunctions[1] });
+
+		return promise;
+	}
 }
 
 
@@ -157,6 +167,13 @@ void CScriptingSystem::LevelInitPreEntity()
 
 	JS_SetHostPromiseRejectionTracker(rt_, JSPromiseRejectionTracker, nullptr);
 	JS_SetModuleLoaderFunc(rt_, nullptr, js_module_loader, nullptr);
+
+	auto global = JS_GetGlobalObject(ctx_);
+
+	JS_SetPropertyStr(ctx_, global, "nextFrame",
+					  JS_NewCFunction(ctx_, NextFrame, "nextFrame", 0));
+
+	JS_FreeValue(ctx_, global);
 }
 
 void CScriptingSystem::LevelInitPostEntity()
@@ -181,7 +198,21 @@ void CScriptingSystem::LevelShutdownPostEntity()
 
 void CScriptingSystem::FrameUpdatePreEntityThink()
 {
-	js_std_loop(ctx_);
+	for (const auto promise : pendingNextFramePromise_)
+	{
+		JS_Call(ctx_, promise.resolve, promise.promise, 0, nullptr);
+	}
+
+	pendingNextFramePromise_.Purge();
+
+	JSContext* ctx;
+	for (;;)
+	{
+		int err = JS_ExecutePendingJob(rt_, &ctx);
+
+		if (!err)
+			break;
+	}
 }
 
 void CScriptingSystem::FrameUpdatePostEntityThink()
@@ -237,6 +268,11 @@ void CScriptingSystem::Eval(const char* code)
 	}
 
 	JS_FreeValue(ctx_, value);
+}
+
+void CScriptingSystem::AddNextFrameResolve(Promise promise)
+{
+	pendingNextFramePromise_.AddToTail(promise);
 }
 
 static CScriptingSystem s_ScriptingEngine;

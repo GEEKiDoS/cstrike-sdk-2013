@@ -119,6 +119,11 @@ namespace Engine
 		return Cvar::ToJSValue(ctx, cvar);
 	}
 
+	static JSValue GetServerTime(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	{
+		return JS_NewFloat64(ctx, engine->GetServerTime());
+	}
+
 	class Module : public IScriptingModule
 	{
 	public:
@@ -131,9 +136,13 @@ namespace Engine
 							  JS_NewCFunction(ctx, ServerCommand, "serverCommand", 1));
 			JS_SetPropertyStr(ctx, engine_object, "findCVar",
 							  JS_NewCFunction(ctx, FindCVar, "findCVar", 1));
+			JS_SetPropertyStr(ctx, engine_object, "getServerTime",
+							  JS_NewCFunction(ctx, GetServerTime, "getServerTime", 1));
 
 			JS_SetPropertyStr(ctx, global, "engine", engine_object);
 			JS_FreeValue(ctx, global);
+
+			
 
 			Cvar::Init(ctx);
 		}

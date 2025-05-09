@@ -4,11 +4,19 @@
 
 struct JSRuntime;
 struct JSContext;
+struct JSValue;
 
 class IScriptingModule
 {
 public:
 	virtual void Init(JSContext* ctx) const = 0;
+};
+
+struct Promise
+{
+	JSValue promise;
+	JSValue resolve;
+	JSValue reject;
 };
 
 class CScriptingSystem : public CAutoGameSystemPerFrame
@@ -23,6 +31,7 @@ public:
 	void FrameUpdatePostEntityThink() override;
 	void Shutdown() override;
 	void Eval(const char* code);
+	void AddNextFrameResolve(Promise promise);
 
 	template <typename T>
 	class Installer final
@@ -47,6 +56,8 @@ private:
 
 	JSRuntime* rt_;
 	JSContext* ctx_;
+
+	CUtlVector<Promise> pendingNextFramePromise_;
 
 	static CUtlVector<ModuleEntry> modules_;
 };
