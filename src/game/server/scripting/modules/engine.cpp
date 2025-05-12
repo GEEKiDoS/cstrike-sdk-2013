@@ -11,7 +11,7 @@ namespace Engine
 	{
 		JSClassID classId;
 
-		JSValue ToJSValue(JSContext* ctx, ConVar* cvar)
+		JSValue New(JSContext* ctx, ConVar* cvar)
 		{
 			auto cvar_obj = JS_NewObjectClass(ctx, classId);
 			JS_SetOpaque(cvar_obj, cvar);
@@ -77,8 +77,8 @@ namespace Engine
 		{
 			auto* rt = JS_GetRuntime(ctx);
 
-			JS_NewClassID(rt, &Cvar::classId);
-			JS_NewClass(rt, Cvar::classId, &Cvar::classDef);
+			JS_NewClassID(rt, &classId);
+			JS_NewClass(rt, classId, &classDef);
 
 			JSValue proto = JS_NewObject(ctx);
 			JS_SetPropertyFunctionList(ctx, proto, methods, _countof(methods));
@@ -116,7 +116,7 @@ namespace Engine
 		if (!cvar)
 			return JS_UNDEFINED;
 
-		return Cvar::ToJSValue(ctx, cvar);
+		return Cvar::New(ctx, cvar);
 	}
 
 	static JSValue getServerTime(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
@@ -124,20 +124,26 @@ namespace Engine
 		return JS_NewFloat64(ctx, engine->GetServerTime());
 	}
 
+	static const JSCFunctionListEntry engine_funcs[] = {
+		JS_CFUNC_DEF("serverCommand", 1, serverCommand),
+		JS_CFUNC_DEF("findCVar", 1, findCVar),
+		JS_CFUNC_DEF("getServerTime", 0, getServerTime),
+	};
+
+	static int init(JSContext* ctx, JSModuleDef* m)
+	{
+		return JS_SetModuleExportList(ctx, m, engine_funcs, _countof(engine_funcs));
+	}
+
 	class Module : public IScriptingModule
 	{
 	public:
 		void Init(JSContext* ctx) const
 		{
-			auto global = JS_GetGlobalObject(ctx);
-			auto engine_object = JS_NewObject(ctx);
+			auto* m = JS_NewCModule(ctx, "engine", init);
+			assert(m);
 
-			ASSIGN_FUNCTION(engine_object, serverCommand, 1);
-			ASSIGN_FUNCTION(engine_object, findCVar, 1);
-			ASSIGN_FUNCTION(engine_object, getServerTime, 0);
-
-			JS_SetPropertyStr(ctx, global, "engine", engine_object);
-			JS_FreeValue(ctx, global);
+			JS_AddModuleExportList(ctx, m, engine_funcs, _countof(engine_funcs));
 
 			Cvar::Init(ctx);
 		}

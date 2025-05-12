@@ -1,4 +1,6 @@
 import { test_shit } from 'module_test.js';
+import * as engine from 'engine';
+import { findByClassName } from 'entity';
 
 async function main() {
     console.log('hahaha I\'m working!!!');
@@ -20,15 +22,16 @@ async function main() {
 
     let lastOutput = engine.getServerTime();
     let frames = 0;
-    while(true)
-    {
+    while (true) {
         await nextFrame();
         ++frames;
 
         const now = engine.getServerTime();
-        if (now - lastOutput > 1.0)
-        {
-            console.log("looping... fps: %d\n", frames);
+        if (now - lastOutput > 1.0) {
+            console.log("looping... fps: %d\n", frames / 10);
+
+            const entities = Array.from(findByClassName("player"));
+            console.log("%d players", entities.length);
 
             frames = 0;
             lastOutput = now;
