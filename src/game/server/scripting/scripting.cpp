@@ -12,6 +12,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef DEBUG
+extern "C" BOOL __stdcall AllocConsole(void);
+#endif
+
 namespace tier0
 {
 	void* js_malloc(void* opaque, size_t size)
@@ -118,7 +122,7 @@ namespace
 		DumpException(ctx, reason);
 	}
 
-	static JSValue NextFrame(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	static JSValue nextFrame(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
 		JSValue resolveFunctions[2];
 		JSValue promise = JS_NewPromiseCapability(ctx, resolveFunctions);
@@ -127,6 +131,25 @@ namespace
 
 		return promise;
 	}
+
+#ifdef DEBUG
+	void CreateConsole()
+	{
+		static bool created = false;
+
+		if (!created)
+		{
+			created = true;
+
+			AllocConsole();
+
+			FILE* f;
+			auto _ = freopen_s(&f, "CONOUT$", "w+t", stdout);
+			_ = freopen_s(&f, "CONOUT$", "w", stderr);
+			_ = freopen_s(&f, "CONIN$", "r", stdin);
+		}
+	}
+#endif
 }
 
 
@@ -136,10 +159,15 @@ CScriptingSystem::CScriptingSystem() : CAutoGameSystemPerFrame("JSScriptingEngin
 {
 	rt_ = nullptr;
 	ctx_ = nullptr;
+	running_ = false;
 }
 
 void CScriptingSystem::LevelInitPreEntity()
 {
+#ifdef DEBUG
+	CreateConsole();
+#endif
+
 	Msg("Initializing Scripting...\n");
 
 	JSMallocFunctions tier0_malloc_functions
@@ -151,38 +179,67 @@ void CScriptingSystem::LevelInitPreEntity()
 	rt_ = JS_NewRuntime2(&tier0_malloc_functions, nullptr);
 	Assert(rt_);
 
+#ifdef DEBUG
+	JS_SetDumpFlags(rt_, JS_DUMP_LEAKS | JS_DUMP_ATOM_LEAKS);
+#endif
+
 	ctx_ = JS_NewContext(rt_);
 	Assert(ctx_);
 
+	auto* ctx = ctx_;
+
 	js_std_init_handlers(rt_);
-	js_init_module_std(ctx_, "std");
-	js_init_module_os(ctx_, "os");
-	js_init_module_bjson(ctx_, "bjson");
+	js_init_module_std(ctx, "std");
+	js_init_module_os(ctx, "os");
+	js_init_module_bjson(ctx, "bjson");
 
 	for (const auto& entry : modules_)
 	{
 		Msg("Loading Module %s\n", entry.name);
-		entry.mod->Init(ctx_);
+		entry.mod->Init(ctx);
 	}
 
 	JS_SetHostPromiseRejectionTracker(rt_, JSPromiseRejectionTracker, nullptr);
 	JS_SetModuleLoaderFunc(rt_, nullptr, js_module_loader, nullptr);
 
-	auto global = JS_GetGlobalObject(ctx_);
-
-	JS_SetPropertyStr(ctx_, global, "nextFrame",
-					  JS_NewCFunction(ctx_, NextFrame, "nextFrame", 0));
-
+	auto global = JS_GetGlobalObject(ctx);
+	ASSIGN_FUNCTION(global, nextFrame, 0);
 	JS_FreeValue(ctx_, global);
+
+	running_ = true;
 }
 
 void CScriptingSystem::LevelInitPostEntity()
 {
-	JS_LoadModule(ctx_, "index.js", "index.js");
+	Exec("index.js");
 }
 
 void CScriptingSystem::LevelShutdownPostEntity()
 {
+	running_ = false;
+
+	Msg("Shutting down...");
+
+	// stop all promises
+	if (ctx_ && rt_)
+	{
+		for (const auto& promise : pendingNextFramePromise_)
+		{
+			auto undefined = JS_UNDEFINED;
+			JS_Call(ctx_, promise.reject, promise.promise, 1, &undefined);
+
+			JS_FreeValue(ctx_, promise.resolve);
+			JS_FreeValue(ctx_, promise.reject);
+			JS_FreeValue(ctx_, undefined);
+		}
+
+		pendingNextFramePromise_.Purge();
+
+		JSContext* ctx;
+		while(JS_IsJobPending(rt_))
+			JS_ExecutePendingJob(rt_, &ctx);
+	}
+
 	if (ctx_)
 	{
 		JS_FreeContext(ctx_);
@@ -198,25 +255,29 @@ void CScriptingSystem::LevelShutdownPostEntity()
 
 void CScriptingSystem::FrameUpdatePreEntityThink()
 {
-	for (const auto promise : pendingNextFramePromise_)
+	if (!running_)
+		return;
+
+	for (const auto& promise : pendingNextFramePromise_)
 	{
 		JS_Call(ctx_, promise.resolve, promise.promise, 0, nullptr);
+
+		JS_FreeValue(ctx_, promise.resolve);
+		JS_FreeValue(ctx_, promise.reject);
 	}
 
 	pendingNextFramePromise_.Purge();
 
 	JSContext* ctx;
-	for (;;)
-	{
-		int err = JS_ExecutePendingJob(rt_, &ctx);
-
-		if (!err)
-			break;
-	}
+	while (JS_IsJobPending(rt_))
+		JS_ExecutePendingJob(rt_, &ctx);
 }
 
 void CScriptingSystem::FrameUpdatePostEntityThink()
 {
+	if (!running_)
+		return;
+
 }
 
 void CScriptingSystem::Shutdown()
@@ -270,6 +331,11 @@ void CScriptingSystem::Eval(const char* code)
 	JS_FreeValue(ctx_, value);
 }
 
+void CScriptingSystem::Exec(const char* file)
+{
+	JS_FreeValue(ctx_, JS_LoadModule(ctx_, file, file));
+}
+
 void CScriptingSystem::AddNextFrameResolve(Promise promise)
 {
 	pendingNextFramePromise_.AddToTail(promise);
@@ -286,4 +352,11 @@ namespace
 	}
 
 	static ConCommand js_eval("js_eval", JS_Eval_f, "Eval Javascript Code");
+
+	void JS_Exec_f(const CCommand& args)
+	{
+		g_pScriptingEngine->Exec(args.ArgS());
+	}
+
+	static ConCommand js_exec("js_exec", JS_Exec_f, "Execute Javascript Module");
 }

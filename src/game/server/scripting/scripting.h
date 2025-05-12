@@ -30,7 +30,10 @@ public:
 	void FrameUpdatePreEntityThink() override;
 	void FrameUpdatePostEntityThink() override;
 	void Shutdown() override;
+
 	void Eval(const char* code);
+	void Exec(const char* file);
+
 	void AddNextFrameResolve(Promise promise);
 
 	template <typename T>
@@ -54,6 +57,8 @@ private:
 
 	static void Register(ModuleEntry scriptmod);
 
+	bool running_;
+
 	JSRuntime* rt_;
 	JSContext* ctx_;
 
@@ -69,3 +74,12 @@ namespace														\
 {																\
 	static CScriptingSystem::Installer<name##::Module> __module {#name}; \
 }
+
+
+#define ASSIGN_FUNCTION_1(parent, name, func, argSize) \
+{ \
+auto __func = JS_NewCFunction(ctx, func, #name, argSize); \
+JS_SetPropertyStr(ctx, parent, #name, __func); \
+}
+
+#define ASSIGN_FUNCTION(parent, name, argSize) ASSIGN_FUNCTION_1(parent, name, name, argSize)

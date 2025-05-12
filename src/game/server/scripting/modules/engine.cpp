@@ -86,7 +86,7 @@ namespace Engine
 		}
 	}
 
-	static JSValue ServerCommand(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	static JSValue serverCommand(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
 		if (!argc)
 			return JS_ThrowTypeError(ctx, "serverCommand takes 1 arg");
@@ -101,7 +101,7 @@ namespace Engine
 		return JS_UNDEFINED;
 	}
 
-	static JSValue FindCVar(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	static JSValue findCVar(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
 		if (!argc)
 			return JS_ThrowTypeError(ctx, "findCVar takes 1 arg");
@@ -119,7 +119,7 @@ namespace Engine
 		return Cvar::ToJSValue(ctx, cvar);
 	}
 
-	static JSValue GetServerTime(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
+	static JSValue getServerTime(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv)
 	{
 		return JS_NewFloat64(ctx, engine->GetServerTime());
 	}
@@ -132,17 +132,12 @@ namespace Engine
 			auto global = JS_GetGlobalObject(ctx);
 			auto engine_object = JS_NewObject(ctx);
 
-			JS_SetPropertyStr(ctx, engine_object, "serverCommand",
-							  JS_NewCFunction(ctx, ServerCommand, "serverCommand", 1));
-			JS_SetPropertyStr(ctx, engine_object, "findCVar",
-							  JS_NewCFunction(ctx, FindCVar, "findCVar", 1));
-			JS_SetPropertyStr(ctx, engine_object, "getServerTime",
-							  JS_NewCFunction(ctx, GetServerTime, "getServerTime", 1));
+			ASSIGN_FUNCTION(engine_object, serverCommand, 1);
+			ASSIGN_FUNCTION(engine_object, findCVar, 1);
+			ASSIGN_FUNCTION(engine_object, getServerTime, 0);
 
 			JS_SetPropertyStr(ctx, global, "engine", engine_object);
 			JS_FreeValue(ctx, global);
-
-			
 
 			Cvar::Init(ctx);
 		}
