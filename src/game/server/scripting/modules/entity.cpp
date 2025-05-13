@@ -57,7 +57,7 @@ namespace Entity
 			auto iterator = JS_NewObjectClass(ctx, classId);
 			JS_SetOpaque(iterator, nullptr);
 			JS_SetPropertyStr(ctx, iterator, "__type", JS_NewInt32(ctx, type));
-			JS_SetPropertyStr(ctx, iterator, "__query", query);
+			JS_SetPropertyStr(ctx, iterator, "__query", JS_DupValue(ctx, query));
 
 			return iterator;
 		}
