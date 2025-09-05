@@ -1,0 +1,4 @@
+ReShadePP
+{
+    "$depthbuffer" "_rt_DepthBuffer"
+}

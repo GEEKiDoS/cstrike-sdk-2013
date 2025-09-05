@@ -2218,6 +2218,22 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 
 	CMatRenderContextPtr pRenderContext( materials );
 
+	IMaterial* pReshadeMaterial = materials->FindMaterial("dev/reshade", TEXTURE_GROUP_OTHER, true);
+
+	//SetRenderTargetAndViewPort( dest_rt0 );
+	//pRenderContext->PopRenderTargetAndViewport();
+
+	if (pReshadeMaterial)
+	{
+		pRenderContext->DrawScreenSpaceRectangle(
+			pReshadeMaterial,
+			x, y, w, h,
+			x, y, w, h,
+			w, h, GetClientWorldEntity()->GetClientRenderable());
+	}
+
+	return;
+
 	if ( g_bDumpRenderTargets )
 	{
 		g_bDumpRenderTargets = false;   // Turn off from previous frame

@@ -705,7 +705,7 @@ ConVar::~ConVar( void )
 //-----------------------------------------------------------------------------
 void ConVar::InstallChangeCallback( FnChangeCallback_t callback )
 {
-	Assert( !m_pParent->m_fnChangeCallback || !callback );
+	// ( !m_pParent->m_fnChangeCallback || !callback );
 	m_pParent->m_fnChangeCallback = callback;
 
 	if ( m_pParent->m_fnChangeCallback )

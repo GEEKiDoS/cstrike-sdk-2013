@@ -460,6 +460,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
 #define LAUNCHER_DLL_PATH	"%s\\" PLATFORM_BIN_DIR "\\launcher.dll"
 #define LAUNCHER_PATH		"%s\\" PLATFORM_BIN_DIR
+#define RESHADE_DLL_PATH	"%s\\ReShade64.dll"
 
 	_snprintf( szBuffer, sizeof( szBuffer ), "PATH=" LAUNCHER_PATH ";%s", pBinaryGameDir, pPath );
 	szBuffer[sizeof( szBuffer ) - 1] = '\0';
@@ -487,6 +488,27 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	}
 
 	LauncherMain_t main = (LauncherMain_t)GetProcAddress( launcher, "LauncherMain" );
+
+	// Load Reshade
+	_putenv("RESHADE_DISABLE_LOADING_CHECK=1");
+	_snprintf(szBuffer, sizeof(szBuffer), RESHADE_DLL_PATH, pRootDir);
+	szBuffer[sizeof(szBuffer) - 1] = '\0';
+
+	auto reshade = LoadLibraryA(szBuffer);
+	if (!reshade)
+	{
+		char* pszError;
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&pszError, 0, NULL);
+
+		char szBuf[1024];
+		_snprintf(szBuf, sizeof(szBuf), "Failed to load the ReShade DLL:\n\n%s", pszError);
+		szBuf[sizeof(szBuf) - 1] = '\0';
+		MessageBox(0, szBuf, "Launcher Error", MB_OK);
+
+		LocalFree(pszError);
+		return 0;
+	}
+
 	return main( hInstance, hPrevInstance, lpCmdLine, nCmdShow );
 }
 

@@ -318,6 +318,13 @@ void CViewRender::Init( void )
 	m_flLastFOV = default_fov.GetFloat();
 #endif
 
+	int w, h;
+	materials->GetBackBufferDimensions(w, h);
+	materials->CreateNamedRenderTargetTexture(
+		"_rt_DepthBuffer",
+		w, h,
+		RT_SIZE_FULL_FRAME_BUFFER, IMAGE_FORMAT_R32F, MATERIAL_RT_DEPTH_ONLY
+	);
 }
 
 //-----------------------------------------------------------------------------
